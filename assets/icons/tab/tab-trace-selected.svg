@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+  <!-- 气泡圆角 -->
+  <rect x="8" y="8" width="32" height="24" rx="4" fill="#C45C3E"/>
+  <!-- 气泡尾巴 -->
+  <path d="M12 32L8 40L16 32H12Z" fill="#C45C3E"/>
+  <!-- 气泡线条1 -->
+  <rect x="14" y="15" width="16" height="2" rx="1" fill="white"/>
+  <!-- 气泡线条2 -->
+  <rect x="14" y="21" width="10" height="2" rx="1" fill="white"/>
+</svg>

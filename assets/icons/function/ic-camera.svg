@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <!-- 相机机身 -->
+  <rect x="2" y="6" width="20" height="14" rx="2" fill="#2D2420"/>
+  <!-- 取景器凸起 -->
+  <path d="M8 6L10 3H14L16 6H8Z" fill="#2D2420"/>
+  <!-- 镜头 -->
+  <circle cx="12" cy="13" r="4" fill="white"/>
+  <!-- 镜头内圈 -->
+  <circle cx="12" cy="13" r="2" fill="#2D2420"/>
+</svg>

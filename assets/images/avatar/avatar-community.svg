@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60" fill="none">
+  <!-- 圆角矩形背景 -->
+  <rect x="2" y="2" width="56" height="56" rx="10" fill="#EDE8E3"/>
+  <!-- 房屋主体 -->
+  <rect x="14" y="25" width="32" height="22" rx="2" fill="#8C7E72"/>
+  <!-- 屋顶 -->
+  <path d="M10 27L30 12L50 27H10Z" fill="#8C7E72"/>
+  <!-- 门 -->
+  <rect x="24" y="35" width="10" height="12" rx="1.5" fill="#EDE8E3"/>
+</svg>

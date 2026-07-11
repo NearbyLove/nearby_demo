@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none">
+  <!-- 盾牌背景 -->
+  <path d="M60 10L20 35V65C20 90 37 108 60 115C83 108 100 90 100 65V35L60 10Z" fill="#5A8F7B"/>
+  <!-- 勾选标记 -->
+  <path d="M38 60L52 74L82 44" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <!-- 左转箭头 -->
+  <path d="M10 4L4 10L10 16" fill="#2D2420"/>
+  <!-- 箭杆 -->
+  <rect x="5" y="9" width="15" height="2" rx="1" fill="#2D2420"/>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+  <!-- 三弧旋转加载动画 -->
+  <g>
+    <!-- 弧1 -->
+    <path d="M24 4 A20 20 0 0 1 40 14" stroke="#C45C3E" stroke-width="4" stroke-linecap="round" fill="none">
+      <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="0.8s" repeatCount="indefinite"/>
+    </path>
+    <!-- 弧2 -->
+    <path d="M44 24 A20 20 0 0 1 34 40" stroke="#C45C3E" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.66">
+      <animateTransform attributeName="transform" type="rotate" from="120 24 24" to="480 24 24" dur="0.8s" repeatCount="indefinite"/>
+    </path>
+    <!-- 弧3 -->
+    <path d="M24 44 A20 20 0 0 1 8 34" stroke="#C45C3E" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.33">
+      <animateTransform attributeName="transform" type="rotate" from="240 24 24" to="600 24 24" dur="0.8s" repeatCount="indefinite"/>
+    </path>
+  </g>
+</svg>

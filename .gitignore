@@ -1,0 +1,10 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.venv/
+instance/
+*.db
+__pycache__/
+*.py[cod]
+hardware/capture.jpg

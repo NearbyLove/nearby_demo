@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80" fill="none">
+  <!-- 圆角矩形背景 -->
+  <rect x="2" y="2" width="76" height="76" rx="12" fill="#EDE8E3"/>
+  <!-- 头部 -->
+  <circle cx="40" cy="28" r="12" fill="#8C7E72"/>
+  <!-- 肩部剪影 -->
+  <path d="M14 76C14 58 24 46 40 46C56 46 66 58 66 76V80H14V76Z" fill="#8C7E72"/>
+</svg>

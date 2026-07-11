@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+  <!-- 房屋主体 -->
+  <path d="M6 22L24 8L42 22V42H6V22Z" fill="#8C7E72"/>
+  <!-- 屋顶三角 -->
+  <path d="M4 24L24 6L44 24H4Z" fill="#8C7E72"/>
+  <!-- 烟囱 -->
+  <rect x="32" y="10" width="4" height="10" rx="1" fill="#8C7E72"/>
+  <!-- 门 -->
+  <rect x="20" y="30" width="8" height="12" rx="1" fill="white"/>
+</svg>

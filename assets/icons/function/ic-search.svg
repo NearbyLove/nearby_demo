@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <!-- 放大镜圆圈 -->
+  <circle cx="10" cy="10" r="7" fill="#2D2420"/>
+  <!-- 放大镜内圈 -->
+  <circle cx="10" cy="10" r="4.5" fill="white"/>
+  <!-- 手柄 -->
+  <rect x="14.5" y="14.5" width="3.5" height="8" rx="1.75" fill="#2D2420" transform="rotate(45 16.25 18.5)"/>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <!-- 铅笔主体 -->
+  <path d="M3 21L4.5 15L17.5 2L22 6.5L9 19.5L3 21Z" fill="#2D2420"/>
+  <!-- 橡皮擦 -->
+  <rect x="1" y="18" width="4" height="4" rx="0.5" fill="#2D2420" transform="rotate(45 3 20)"/>
+</svg>

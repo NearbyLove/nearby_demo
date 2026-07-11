@@ -1,0 +1,2085 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>西红门镇治理大屏 · CommunitySense 政府端</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+/* ============================================================
+   1. Design Tokens
+   ============================================================ */
+:root {
+  --bg-deep:      #080e1a;
+  --bg-primary:   #0d1b2d;
+  --bg-card:      #111d33;
+  --bg-card-hover:#152340;
+  --bg-sidebar:   #0a1424;
+  --border-subtle:#1a3050;
+  --border-medium:#234568;
+  --text-primary: #e8ecf1;
+  --text-secondary:#94a3b8;
+  --text-muted:  #64748b;
+  --accent-blue: #3b82f6;
+  --accent-cyan: #06b6d4;
+  --accent-green:#10b981;
+  --accent-orange:#f59e0b;
+  --accent-red:  #ef4444;
+  --accent-purple:#8b5cf6;
+  --gradient-blue:linear-gradient(135deg, #1e3a5f 0%, #0d1b2d 100%);
+  --gradient-card:linear-gradient(180deg, rgba(59,130,246,0.08) 0%, rgba(17,29,51,0) 100%);
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.3);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --font-sans: -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', 'Menlo', monospace;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+   2. Reset & Base
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--font-sans);
+  background:var(--bg-deep);
+  color:var(--text-primary);
+  overflow:hidden;
+  height:100vh;
+  width:100vw;
+}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-medium);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
+
+/* ============================================================
+   3. Layout — Full Screen Grid
+   ============================================================ */
+.app-shell{
+  display:grid;
+  grid-template-columns:250px 1fr;
+  grid-template-rows:56px 1fr;
+  height:100vh;
+  width:100vw;
+}
+/* Sidebar */
+.sidebar{
+  grid-row:1/3;
+  grid-column:1;
+  background:var(--bg-sidebar);
+  border-right:1px solid var(--border-subtle);
+  display:flex;
+  flex-direction:column;
+  z-index:10;
+}
+.sidebar-header{
+  height:56px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 18px;
+  border-bottom:1px solid var(--border-subtle);
+  flex-shrink:0;
+}
+.sidebar-logo{
+  width:32px;height:32px;
+  background:var(--accent-blue);
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:14px;color:#fff;
+}
+.sidebar-title{
+  font-size:15px;
+  font-weight:600;
+  color:var(--text-primary);
+  line-height:1.3;
+}
+.sidebar-title small{
+  display:block;
+  font-size:11px;
+  font-weight:400;
+  color:var(--text-muted);
+}
+.sidebar-nav{
+  flex:1;
+  overflow-y:auto;
+  padding:8px 0;
+}
+.nav-item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 18px;
+  margin:2px 8px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:13.5px;
+  font-weight:500;
+  color:var(--text-secondary);
+  transition:var(--transition);
+  border:none;
+  background:none;
+  width:calc(100% - 16px);
+  text-align:left;
+}
+.nav-item:hover{
+  background:rgba(59,130,246,0.08);
+  color:var(--text-primary);
+}
+.nav-item.active{
+  background:rgba(59,130,246,0.15);
+  color:var(--accent-blue);
+  font-weight:600;
+}
+.nav-icon{font-size:18px;width:22px;text-align:center;flex-shrink:0}
+.nav-badge{
+  margin-left:auto;
+  background:var(--accent-red);
+  color:#fff;
+  font-size:10px;
+  padding:2px 6px;
+  border-radius:10px;
+  font-weight:600;
+}
+
+/* Sidebar footer */
+.sidebar-footer{
+  border-top:1px solid var(--border-subtle);
+  padding:12px 18px;
+  flex-shrink:0;
+}
+.user-info{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.user-avatar{
+  width:32px;height:32px;
+  border-radius:50%;
+  background:var(--accent-purple);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;color:#fff;
+  flex-shrink:0;
+}
+.user-name{font-size:13px;font-weight:500;color:var(--text-primary)}
+.user-role{font-size:11px;color:var(--text-muted)}
+
+/* Top Bar */
+.topbar{
+  grid-row:1;
+  grid-column:2;
+  background:var(--bg-primary);
+  border-bottom:1px solid var(--border-subtle);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 24px;
+  z-index:5;
+}
+.topbar-left{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+.topbar-right{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.page-title{
+  font-size:16px;
+  font-weight:600;
+  color:var(--text-primary);
+}
+.filter-group{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.filter-label{
+  font-size:12px;
+  color:var(--text-muted);
+  white-space:nowrap;
+}
+.filter-select{
+  background:var(--bg-card);
+  border:1px solid var(--border-subtle);
+  color:var(--text-primary);
+  font-size:12px;
+  padding:6px 28px 6px 10px;
+  border-radius:6px;
+  cursor:pointer;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 8px center;
+  outline:none;
+}
+.filter-select:focus{border-color:var(--accent-blue)}
+.topbar-time{
+  font-size:12px;
+  color:var(--text-muted);
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.topbar-dot{
+  width:6px;height:6px;
+  background:var(--accent-green);
+  border-radius:50%;
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* Main Content */
+.main-content{
+  grid-row:2;
+  grid-column:2;
+  overflow-y:auto;
+  overflow-x:hidden;
+  background:var(--bg-deep);
+  padding:20px 24px 24px;
+}
+
+/* Page Container */
+.page-panel{display:none}
+.page-panel.active{display:block;animation:fadeIn 0.3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============================================================
+   4. Reusable Components
+   ============================================================ */
+/* Section Header */
+.section-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:16px;
+}
+.section-title{
+  font-size:15px;
+  font-weight:600;
+  color:var(--text-primary);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.section-title::before{
+  content:'';
+  width:3px;height:16px;
+  background:var(--accent-blue);
+  border-radius:2px;
+}
+.section-subtitle{
+  font-size:12px;
+  color:var(--text-muted);
+}
+
+/* Indicator Cards Grid */
+.kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+  gap:14px;
+  margin-bottom:20px;
+}
+.kpi-card{
+  background:var(--bg-card);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-md);
+  padding:16px 18px;
+  transition:var(--transition);
+}
+.kpi-card:hover{
+  border-color:var(--border-medium);
+  box-shadow:var(--shadow-card);
+}
+.kpi-label{
+  font-size:12px;
+  color:var(--text-muted);
+  margin-bottom:6px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.kpi-value{
+  font-size:28px;
+  font-weight:700;
+  font-family:var(--font-mono);
+  line-height:1.1;
+}
+.kpi-trend{
+  font-size:12px;
+  margin-top:4px;
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.kpi-trend.up{color:var(--accent-green)}
+.kpi-trend.down{color:var(--accent-red)}
+.kpi-trend.stable{color:var(--text-muted)}
+.kpi-source{
+  font-size:10px;
+  color:var(--text-muted);
+  margin-top:2px;
+}
+
+/* Chart Row — 2 columns */
+.chart-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:20px;
+}
+.chart-row.three{
+  grid-template-columns:1fr 1fr 1fr;
+}
+.chart-card{
+  background:var(--bg-card);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-md);
+  padding:16px;
+}
+.chart-card-title{
+  font-size:13px;
+  font-weight:600;
+  color:var(--text-primary);
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.chart-card-title::before{
+  content:'';
+  width:3px;height:14px;
+  background:var(--accent-cyan);
+  border-radius:2px;
+}
+.chart-container{width:100%;height:260px}
+
+/* Full-width chart */
+.chart-card.full{grid-column:1/-1}
+.chart-card.full .chart-container{height:300px}
+
+/* Alert List */
+.alert-list{
+  background:var(--bg-card);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-md);
+  overflow:hidden;
+}
+.alert-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 16px;
+  border-bottom:1px solid var(--border-subtle);
+  font-size:13px;
+  transition:var(--transition);
+}
+.alert-item:last-child{border-bottom:none}
+.alert-item:hover{background:var(--bg-card-hover)}
+.alert-icon{
+  width:32px;height:32px;
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;
+}
+.alert-icon.warn{background:rgba(245,158,11,0.15);color:var(--accent-orange)}
+.alert-icon.danger{background:rgba(239,68,68,0.15);color:var(--accent-red)}
+.alert-icon.info{background:rgba(59,130,246,0.15);color:var(--accent-blue)}
+.alert-content{flex:1;min-width:0}
+.alert-title{font-weight:500;color:var(--text-primary)}
+.alert-desc{font-size:11px;color:var(--text-muted);margin-top:2px}
+.alert-tag{
+  font-size:10px;
+  padding:2px 8px;
+  border-radius:10px;
+  font-weight:500;
+  white-space:nowrap;
+}
+.alert-tag.warn{background:rgba(245,158,11,0.15);color:var(--accent-orange)}
+.alert-tag.danger{background:rgba(239,68,68,0.15);color:var(--accent-red)}
+.alert-tag.info{background:rgba(59,130,246,0.15);color:var(--accent-blue)}
+
+/* Table */
+.data-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+}
+.data-table th{
+  text-align:left;
+  padding:10px 14px;
+  font-weight:600;
+  color:var(--text-muted);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  border-bottom:2px solid var(--border-subtle);
+}
+.data-table td{
+  padding:10px 14px;
+  border-bottom:1px solid var(--border-subtle);
+  color:var(--text-primary);
+}
+.data-table tr:hover td{background:rgba(59,130,246,0.04)}
+.table-badge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:4px;
+  font-size:11px;
+  font-weight:500;
+}
+.table-badge.good{background:rgba(16,185,129,0.15);color:var(--accent-green)}
+.table-badge.warn{background:rgba(245,158,11,0.15);color:var(--accent-orange)}
+.table-badge.bad{background:rgba(239,68,68,0.15);color:var(--accent-red)}
+
+/* Comparison Group */
+.compare-group{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:20px;
+}
+.compare-card{
+  background:var(--bg-card);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-md);
+  padding:18px;
+}
+.compare-card.official{border-left:3px solid var(--accent-orange)}
+.compare-card.system{border-left:3px solid var(--accent-blue)}
+.compare-label{
+  font-size:11px;
+  color:var(--text-muted);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:8px;
+}
+.compare-value{
+  font-size:32px;
+  font-weight:700;
+  font-family:var(--font-mono);
+}
+
+/* Map Container */
+.map-container{
+  width:100%;
+  height:420px;
+  background:var(--bg-card);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-md);
+  overflow:hidden;
+  position:relative;
+}
+.map-container .leaflet-container{
+  background:#0d1b2d;
+}
+.map-legend{
+  position:absolute;
+  bottom:16px;
+  left:16px;
+  background:rgba(13,27,45,0.92);
+  border:1px solid var(--border-subtle);
+  border-radius:8px;
+  padding:10px 14px;
+  font-size:11px;
+  z-index:1000;
+}
+.map-legend-item{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin:3px 0;
+  color:var(--text-secondary);
+}
+.map-legend-dot{
+  width:10px;height:10px;
+  border-radius:3px;
+}
+
+/* Tag / Badge */
+.tag{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  font-size:11px;
+  padding:3px 10px;
+  border-radius:4px;
+  font-weight:500;
+}
+.tag-blue{background:rgba(59,130,246,0.15);color:var(--accent-blue)}
+.tag-green{background:rgba(16,185,129,0.15);color:var(--accent-green)}
+.tag-orange{background:rgba(245,158,11,0.15);color:var(--accent-orange)}
+.tag-red{background:rgba(239,68,68,0.15);color:var(--accent-red)}
+.tag-purple{background:rgba(139,92,246,0.15);color:var(--accent-purple)}
+
+/* Disclaimer Banner */
+.disclaimer{
+  background:rgba(245,158,11,0.08);
+  border:1px solid rgba(245,158,11,0.2);
+  border-radius:var(--radius-sm);
+  padding:8px 14px;
+  font-size:11px;
+  color:var(--text-muted);
+  margin-bottom:16px;
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+}
+.disclaimer-icon{flex-shrink:0;font-size:14px}
+
+/* Legend tooltip */
+.map-tooltip{
+  background:rgba(13,27,45,0.95);
+  border:1px solid var(--border-medium);
+  border-radius:8px;
+  padding:12px 16px;
+  font-size:12px;
+  color:var(--text-primary);
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);
+}
+.map-tooltip strong{display:block;font-size:14px;margin-bottom:4px}
+.map-tooltip .tt-row{display:flex;justify-content:space-between;gap:20px;color:var(--text-secondary);margin:2px 0}
+
+/* Audit log table */
+.audit-log{
+  max-height:300px;
+  overflow-y:auto;
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <!-- ============================================================
+       Sidebar
+       ============================================================ -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">西</div>
+      <div class="sidebar-title">
+        西红门镇<br><small>CommunitySense 政府端</small>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-page="overview">
+        <span class="nav-icon">📊</span>治理总览
+      </button>
+      <button class="nav-item" data-page="population">
+        <span class="nav-icon">👥</span>居住与人口
+      </button>
+      <button class="nav-item" data-page="service">
+        <span class="nav-icon">🤝</span>社区服务与连接
+      </button>
+      <button class="nav-item" data-page="property">
+        <span class="nav-icon">🏢</span>物业履约与设施
+      </button>
+      <button class="nav-item" data-page="collaboration">
+        <span class="nav-icon">🔄</span>协同治理与复发
+        <span class="nav-badge">3</span>
+      </button>
+      <button class="nav-item" data-page="datagov">
+        <span class="nav-icon">🛡️</span>数据治理与合规
+      </button>
+      <button class="nav-item" data-page="community">
+        <span class="nav-icon">📍</span>社区详情
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">张</div>
+        <div>
+          <div class="user-name">张建国</div>
+          <div class="user-role">镇领导 · 高级授权</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       Top Bar
+       ============================================================ -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="page-title" id="pageTitle">治理总览</span>
+      <div class="topbar-time">
+        <span class="topbar-dot"></span>
+        数据更新：<span id="updateTime">2026-07-11 09:00</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="filter-group">
+        <span class="filter-label">统计周期</span>
+        <select class="filter-select" id="filterPeriod">
+          <option>近7天</option>
+          <option selected>近30天</option>
+          <option>近90天</option>
+          <option>本年度</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">社区类型</span>
+        <select class="filter-select" id="filterType">
+          <option selected>全部类型</option>
+          <option>商品房社区</option>
+          <option>回迁安置社区</option>
+          <option>老旧小区</option>
+          <option>保租房社区</option>
+          <option>村庄出租房</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">数据口径</span>
+        <select class="filter-select" id="filterCaliber">
+          <option selected>系统内口径</option>
+          <option>官方口径</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       Main Content — All Pages
+       ============================================================ -->
+  <main class="main-content">
+
+    <!-- ========================================================
+         PAGE 1: 治理总览
+         ======================================================== -->
+    <div class="page-panel active" id="page-overview">
+      <!-- KPI Grid -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">🏠 系统内已确认居住人数</div>
+          <div class="kpi-value">89,342</div>
+          <div class="kpi-trend up">▲ 3.2% <span style="color:var(--text-muted);margin-left:4px">较上月</span></div>
+          <div class="kpi-source">覆盖 27 个社区 · 系统内口径</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">📋 居住关系更新率</div>
+          <div class="kpi-value">78.6<span style="font-size:16px">%</span></div>
+          <div class="kpi-trend up">▲ 2.1%</div>
+          <div class="kpi-source">待核验率 12.4% · 过期率 9.0%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">✅ 服务申请完成率</div>
+          <div class="kpi-value">91.3<span style="font-size:16px">%</span></div>
+          <div class="kpi-trend stable">→ 持平</div>
+          <div class="kpi-source">近30天受理 4,821 件</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">🔧 物业工单 SLA 达标率</div>
+          <div class="kpi-value">84.7<span style="font-size:16px">%</span></div>
+          <div class="kpi-trend down">▼ 1.8%</div>
+          <div class="kpi-source">复发率 18.3% · 超时率 15.3%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">💬 社区级 NCI 趋势</div>
+          <div class="kpi-value" style="color:var(--accent-green)">+4.6<span style="font-size:16px">%</span></div>
+          <div class="kpi-trend up">▲ 正向改善</div>
+          <div class="kpi-source">22/27 社区呈正向趋势</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">🤝 跨主体协同按时完成率</div>
+          <div class="kpi-value">76.2<span style="font-size:16px">%</span></div>
+          <div class="kpi-trend up">▲ 4.5%</div>
+          <div class="kpi-source">协同任务 1,247 件</div>
+        </div>
+      </div>
+
+      <!-- Map + Alerts -->
+      <div class="chart-row">
+        <div class="chart-card" style="overflow:hidden">
+          <div class="chart-card-title" style="justify-content:space-between">
+            <span>镇域社区治理态势地图</span>
+            <span style="font-size:11px;color:var(--text-muted);font-weight:400">⚠️ 仅展示社区级聚合，不下钻楼栋/房屋/个人</span>
+          </div>
+          <div class="map-container" id="overviewMap">
+            <div class="map-legend">
+              <div class="map-legend-item"><span class="map-legend-dot" style="background:#10b981"></span> 良好（NCI ≥ 75）</div>
+              <div class="map-legend-item"><span class="map-legend-dot" style="background:#f59e0b"></span> 关注（NCI 60-74）</div>
+              <div class="map-legend-item"><span class="map-legend-dot" style="background:#ef4444"></span> 需改善（NCI < 60）</div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">今日需关注事项</div>
+          <div class="alert-list">
+            <div class="alert-item">
+              <div class="alert-icon danger">⚠</div>
+              <div class="alert-content">
+                <div class="alert-title">数据质量异常 — 3个社区覆盖率骤降</div>
+                <div class="alert-desc">宏业东区、理想城一期、礼域府待核验率超 25%</div>
+              </div>
+              <span class="alert-tag danger">需处理</span>
+            </div>
+            <div class="alert-item">
+              <div class="alert-icon warn">↻</div>
+              <div class="alert-content">
+                <div class="alert-title">高复发问题 — 电梯故障（理想城二期）</div>
+                <div class="alert-desc">近30天同地点报修 12 次，复发率 41.7%</div>
+              </div>
+              <span class="alert-tag warn">关注</span>
+            </div>
+            <div class="alert-item">
+              <div class="alert-icon warn">⏱</div>
+              <div class="alert-content">
+                <div class="alert-title">协同超时 — 宏业路积水治理</div>
+                <div class="alert-desc">涉及水务局、物业、居委会，超时 15 天</div>
+              </div>
+              <span class="alert-tag warn">超时</span>
+            </div>
+            <div class="alert-item">
+              <div class="alert-icon info">🏥</div>
+              <div class="alert-content">
+                <div class="alert-title">服务缺口 — 金星庄养老服务申请积压</div>
+                <div class="alert-desc">待处理申请 47 件，平均等待 12 天</div>
+              </div>
+              <span class="alert-tag info">建议</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trend Charts -->
+      <div class="section-header"><span class="section-title">变化趋势</span></div>
+      <div class="chart-row">
+        <div class="chart-card"><div class="chart-card-title">居住关系变化趋势</div><div class="chart-container" id="chart-residence-trend"></div></div>
+        <div class="chart-card"><div class="chart-card-title">服务与通知触达趋势</div><div class="chart-container" id="chart-service-trend"></div></div>
+        <div class="chart-card"><div class="chart-card-title">物业履约趋势</div><div class="chart-container" id="chart-property-trend"></div></div>
+        <div class="chart-card"><div class="chart-card-title">NCI 与区域改善效果</div><div class="chart-container" id="chart-nci-trend"></div></div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         PAGE 2: 居住与人口
+         ======================================================== -->
+    <div class="page-panel" id="page-population">
+      <div class="disclaimer">
+        <span class="disclaimer-icon">⚠️</span>
+        本页系统内数据基于 CommunitySense 虚拟户口本与居住关系确认流程，不等同于法定户籍/常住/流动人口统计。官方口径数据需经授权从公安、统计系统接入，此处为示意对照。
+      </div>
+
+      <!-- Caliber Comparison -->
+      <div class="section-header"><span class="section-title">口径对照卡</span></div>
+      <div class="compare-group">
+        <div class="compare-card official">
+          <div class="compare-label">📋 官方口径（公安/统计）</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:12px">
+            <div><div style="font-size:11px;color:var(--text-muted)">户籍人口</div><div class="compare-value" style="font-size:24px">72,150</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted)">法定常住人口</div><div class="compare-value" style="font-size:24px">105,800</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted)">法定流动人口</div><div class="compare-value" style="font-size:24px">38,500</div></div>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:10px">数据来源：经授权公安/统计系统 · 更新周期：年度</div>
+        </div>
+        <div class="compare-card system">
+          <div class="compare-label">🏠 系统内口径（CommunitySense）</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:12px">
+            <div><div style="font-size:11px;color:var(--text-muted)">已确认居住人数</div><div class="compare-value" style="font-size:24px;color:var(--accent-blue)">89,342</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted)">有效 Family 数</div><div class="compare-value" style="font-size:24px;color:var(--accent-blue)">31,250</div></div>
+            <div><div style="font-size:11px;color:var(--text-muted)">覆盖率</div><div class="compare-value" style="font-size:24px;color:var(--accent-blue)">84.4<span style="font-size:16px">%</span></div></div>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:10px">数据来源：虚拟户口本居住关系确认 · 更新周期：实时/日汇总</div>
+        </div>
+      </div>
+
+      <!-- Residence Trend -->
+      <div class="section-header"><span class="section-title">居住关系趋势</span></div>
+      <div class="chart-row">
+        <div class="chart-card full"><div class="chart-card-title">系统覆盖住户流动变化（近6个月）</div><div class="chart-container" id="chart-residence-detail"></div></div>
+      </div>
+
+      <!-- Coverage & Quality -->
+      <div class="chart-row">
+        <div class="chart-card"><div class="chart-card-title">各社区覆盖率与待核验率</div><div class="chart-container" id="chart-coverage"></div></div>
+        <div class="chart-card"><div class="chart-card-title">居住关系数据质量分布</div><div class="chart-container" id="chart-data-quality"></div></div>
+      </div>
+
+      <!-- Community Type Comparison -->
+      <div class="section-header"><span class="section-title">社区类型对比</span></div>
+      <div class="chart-card full" style="margin-bottom:20px">
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>社区类型</th><th>社区数</th><th>已确认居住人数</th><th>Family 数</th><th>覆盖率</th><th>入住变化</th><th>搬离变化</th><th>待核验率</th><th>流动率</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>商品房社区</td><td>12</td><td>42,180</td><td>15,640</td><td>89.2%</td><td style="color:var(--accent-green)">+1,240</td><td style="color:var(--accent-orange)">-680</td><td>7.8%</td><td>4.5%</td></tr>
+              <tr><td>回迁安置社区</td><td>5</td><td>18,550</td><td>6,820</td><td>82.6%</td><td style="color:var(--accent-green)">+320</td><td style="color:var(--accent-orange)">-210</td><td>12.3%</td><td>2.9%</td></tr>
+              <tr><td>老旧小区</td><td>4</td><td>11,280</td><td>4,150</td><td>76.4%</td><td style="color:var(--accent-green)">+180</td><td style="color:var(--accent-orange)">-340</td><td>16.5%</td><td>4.6%</td></tr>
+              <tr><td>保租房社区</td><td>3</td><td>8,920</td><td>2,840</td><td>91.7%</td><td style="color:var(--accent-green)">+560</td><td style="color:var(--accent-orange)">-420</td><td>6.2%</td><td>11.0%</td></tr>
+              <tr><td>村庄出租房</td><td>3</td><td>8,412</td><td>1,800</td><td>68.2%</td><td style="color:var(--accent-green)">+210</td><td style="color:var(--accent-orange)">-290</td><td>24.8%</td><td>5.9%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         PAGE 3: 社区服务与连接
+         ======================================================== -->
+    <div class="page-panel" id="page-service">
+      <div class="disclaimer">
+        <span class="disclaimer-icon">⚠️</span>
+        政府端仅展示社区级 NCI 聚合趋势，不展示网格级明细、个人参与记录或原始表达内容。NCI 上升/下降不代表服务有效/无效，需结合覆盖率、行动投入和反馈综合判断。
+      </div>
+
+      <!-- Government Care Task API -->
+      <div class="chart-card full" style="margin-bottom:20px">
+        <div class="chart-card-title">
+          政府关怀任务下发
+        </div>
+
+        <div class="disclaimer">
+          <span class="disclaimer-icon">🛡️</span>
+          AI 只负责将正式行政任务改写为物业执行摘要和居民温和文案，
+          不选择居民、不判断个人风险、不自动决定上门。
+        </div>
+
+        <div style="
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:16px;
+          margin-bottom:16px;
+        ">
+          <div>
+            <label style="
+              display:block;
+              font-size:12px;
+              color:var(--text-muted);
+              margin-bottom:6px;
+            ">
+              服务类型
+            </label>
+
+            <select
+              id="careServiceType"
+              class="filter-select"
+              style="width:100%;height:40px"
+            >
+              <option value="高温天气关怀">高温天气关怀</option>
+              <option value="寒潮天气关怀">寒潮天气关怀</option>
+              <option value="社区服务提醒">社区服务提醒</option>
+              <option value="节假日关怀">节假日关怀</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="
+              display:block;
+              font-size:12px;
+              color:var(--text-muted);
+              margin-bottom:6px;
+            ">
+              目标范围
+            </label>
+
+            <input
+              id="careTargetScope"
+              value="西红门镇阳光社区"
+              style="
+                width:100%;
+                height:40px;
+                padding:0 12px;
+                color:var(--text-primary);
+                background:var(--bg-primary);
+                border:1px solid var(--border-subtle);
+                border-radius:6px;
+                outline:none;
+              "
+            >
+          </div>
+        </div>
+ 
+        <div style="margin-bottom:16px">
+          <label style="
+            display:block;
+            font-size:12px;
+            color:var(--text-muted);
+            margin-bottom:6px;
+          ">
+            政府正式任务
+          </label>
+
+          <textarea
+            id="careGovernmentText"
+            rows="5"
+            style="
+              width:100%;
+              padding:12px;
+              resize:vertical;
+              color:var(--text-primary);
+              background:var(--bg-primary);
+              border:1px solid var(--border-subtle);
+              border-radius:6px;
+              outline:none;
+              font-family:var(--font-sans);
+              line-height:1.6;
+          "
+          >请各社区结合高温天气情况，对已自愿加入社区关怀服务的居民开展一次状态问候，并做好居民主动求助信息的人工跟进。</textarea>
+        </div>
+
+        <button
+          id="createCareTaskBtn"
+          type="button"
+          style="
+            height:40px;
+            padding:0 20px;
+            border:none;
+            border-radius:6px;
+            background:var(--accent-blue);
+            color:white;
+            font-size:13px;
+            font-weight:600;
+            cursor:pointer;
+          "
+        >
+          生成物业执行任务
+        </button>
+
+        <span
+          id="careSubmitStatus"
+          style="
+            margin-left:12px;
+            font-size:12px;
+            color:var(--text-muted);
+          "
+        ></span>
+
+        <div
+          id="careTaskResult"
+          style="
+            display:none;
+            margin-top:18px;
+            padding:16px;
+            background:var(--bg-primary);
+            border:1px solid var(--border-medium);
+            border-radius:10px;
+          "
+        >
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:14px;
+          ">
+            <strong>任务生成成功</strong>
+
+            <span
+              id="careModelMode"
+              class="tag tag-blue"
+            ></span>
+          </div>
+
+          <div style="
+            display:grid;
+            grid-template-columns:160px 1fr;
+            gap:10px;
+            font-size:13px;
+          ">
+            <span style="color:var(--text-muted)">任务编号</span>
+            <span id="careTaskId"></span>
+
+            <span style="color:var(--text-muted)">任务状态</span>
+            <span id="careTaskStatus"></span>
+
+            <span style="color:var(--text-muted)">物业执行摘要</span>
+            <span id="carePropertySummary"></span>
+
+            <span style="color:var(--text-muted)">居民关怀文案</span>
+            <span id="careResidentMessage"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- NCI Comparison -->
+      <div class="section-header"><span class="section-title">社区级 NCI 比较</span></div>
+      <div class="chart-row">
+        <div class="chart-card full"><div class="chart-card-title">各社区 NCI 趋势与数据覆盖率（近6个月）</div><div class="chart-container" id="chart-nci-community"></div></div>
+      </div>
+
+      <!-- Service Reach -->
+      <div class="chart-row">
+        <div class="chart-card"><div class="chart-card-title">通知触达与阅读确认</div><div class="chart-container" id="chart-notify-reach"></div></div>
+        <div class="chart-card"><div class="chart-card-title">AI 公开问答与信箱主题分布</div><div class="chart-container" id="chart-mailbox-topic"></div></div>
+      </div>
+
+      <!-- Service Supply-Demand -->
+      <div class="section-header"><span class="section-title">服务供需分析</span></div>
+      <div class="chart-row">
+        <div class="chart-card"><div class="chart-card-title">服务申请与完成量（按类型）</div><div class="chart-container" id="chart-service-type"></div></div>
+        <div class="chart-card"><div class="chart-card-title">服务转介完成趋势</div><div class="chart-container" id="chart-referral-trend"></div></div>
+      </div>
+
+      <!-- Regional Improvement Review -->
+      <div class="section-header"><span class="section-title">区域改善复盘</span></div>
+      <div class="chart-card full" style="margin-bottom:20px">
+        <table class="data-table">
+          <thead>
+            <tr><th>社区</th><th>行动前NCI</th><th>行动后NCI</th><th>变化</th><th>通知反馈变化</th><th>工单变化</th><th>投入事项</th><th>评估</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>理想城一期</td><td>58</td><td>71</td><td style="color:var(--accent-green)">+13</td><td style="color:var(--accent-green)">+22%</td><td style="color:var(--accent-green)">-18%</td><td>增加社区活动、助老服务</td><td><span class="table-badge good">有效</span></td></tr>
+            <tr><td>宏业东区</td><td>62</td><td>67</td><td style="color:var(--accent-green)">+5</td><td style="color:var(--accent-green)">+8%</td><td style="color:var(--text-muted)">持平</td><td>优化通知渠道、修缮公告栏</td><td><span class="table-badge good">部分有效</span></td></tr>
+            <tr><td>金星庄</td><td>45</td><td>52</td><td style="color:var(--accent-green)">+7</td><td style="color:var(--accent-green)">+15%</td><td style="color:var(--accent-red)">+5%</td><td>增设线下服务点、志愿者入户</td><td><span class="table-badge warn">持续观察</span></td></tr>
+            <tr><td>礼域府</td><td>72</td><td>74</td><td style="color:var(--text-muted)">+2</td><td style="color:var(--text-muted)">持平</td><td style="color:var(--text-muted)">持平</td><td>常规维护</td><td><span class="table-badge good">稳定</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         PAGE 4: 物业履约与公共设施
+         ======================================================== -->
+    <div class="page-panel" id="page-property">
+      <!-- KPI -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">📝 物业工单总量（近30天）</div>
+          <div class="kpi-value">3,842</div>
+          <div class="kpi-trend up">▲ 5.3%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">⏱ 工单按时完成率</div>
+          <div class="kpi-value">84.7<span style="font-size:16px">%</span></div>
+          <div class="kpi-trend down">▼ 1.8%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">🔄 重复问题比例</div>
+          <div class="kpi-value">18.3<span style="font-size:16px">%</span></div>
+          <div class="kpi-trend up" style="color:var(--accent-red)">▲ 2.1%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">🏗 设施维保按期率</div>
+          <div class="kpi-value">91.2<span style="font-size:16px">%</span></div>
+          <div class="kpi-trend stable">→ 持平</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="chart-row">
+        <div class="chart-card"><div class="chart-card-title">工单量与 SLA 趋势</div><div class="chart-container" id="chart-workorder-sla"></div></div>
+        <div class="chart-card"><div class="chart-card-title">各社区超时率与复发率</div><div class="chart-container" id="chart-community-delay"></div></div>
+        <div class="chart-card"><div class="chart-card-title">设施维保状态分布</div><div class="chart-container" id="chart-facility-status"></div></div>
+        <div class="chart-card"><div class="chart-card-title">公共区域事件处理时效</div><div class="chart-container" id="chart-event-handling"></div></div>
+      </div>
+
+      <!-- Project Comparison -->
+      <div class="section-header"><span class="section-title">物业项目聚合比较</span></div>
+      <div class="chart-card full" style="margin-bottom:20px">
+        <table class="data-table">
+          <thead>
+            <tr><th>物业项目</th><th>覆盖社区</th><th>工单量</th><th>按时率</th><th>超时率</th><th>复发率</th><th>维保按期率</th><th>协同完成率</th><th>评估</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>首开物业（理想城片区）</td><td>6</td><td>1,120</td><td>88.3%</td><td>11.7%</td><td>14.2%</td><td>93.5%</td><td>82.1%</td><td><span class="table-badge good">良好</span></td></tr>
+            <tr><td>宏业物业</td><td>4</td><td>820</td><td>81.5%</td><td>18.5%</td><td>22.8%</td><td>88.7%</td><td>74.3%</td><td><span class="table-badge warn">关注</span></td></tr>
+            <tr><td>鸿坤物业（礼域府等）</td><td>5</td><td>680</td><td>90.2%</td><td>9.8%</td><td>11.5%</td><td>95.1%</td><td>85.6%</td><td><span class="table-badge good">良好</span></td></tr>
+            <tr><td>金星庄村自管</td><td>3</td><td>420</td><td>72.4%</td><td>27.6%</td><td>31.2%</td><td>76.3%</td><td>58.9%</td><td><span class="table-badge bad">需改善</span></td></tr>
+            <tr><td>新建保租房运营</td><td>3</td><td>310</td><td>94.7%</td><td>5.3%</td><td>6.8%</td><td>97.2%</td><td>91.4%</td><td><span class="table-badge good">良好</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         PAGE 5: 协同治理与问题复发
+         ======================================================== -->
+    <div class="page-panel" id="page-collaboration">
+      <!-- KPI -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">🔗 跨主体事件量</div>
+          <div class="kpi-value">1,247</div>
+          <div class="kpi-trend up">▲ 8.5%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">⏱ 平均处理时长</div>
+          <div class="kpi-value">6.8<span style="font-size:16px">天</span></div>
+          <div class="kpi-trend down">▼ 1.2天</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">🔁 问题复发率（90天窗口）</div>
+          <div class="kpi-value">22.4<span style="font-size:16px">%</span></div>
+          <div class="kpi-trend stable">→ 持平</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">✅ 协同按时完成率</div>
+          <div class="kpi-value">76.2<span style="font-size:16px">%</span></div>
+          <div class="kpi-trend up">▲ 4.5%</div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-card"><div class="chart-card-title">跨主体事件量与超时率趋势</div><div class="chart-container" id="chart-cross-event"></div></div>
+        <div class="chart-card"><div class="chart-card-title">复发趋势（按问题类型）</div><div class="chart-container" id="chart-recurrence-type"></div></div>
+      </div>
+
+      <!-- Conversion Funnel -->
+      <div class="section-header"><span class="section-title">治理转化漏斗</span></div>
+      <div class="chart-row">
+        <div class="chart-card full"><div class="chart-card-title">通知反馈 → 信箱 → 工单 → 协同任务 转化链路</div><div class="chart-container" id="chart-funnel"></div></div>
+      </div>
+
+      <!-- Complex Issues -->
+      <div class="section-header"><span class="section-title">需镇级调度的复杂问题清单</span></div>
+      <div class="chart-card full" style="margin-bottom:20px">
+        <table class="data-table">
+          <thead><tr><th>事项类型</th><th>涉及社区</th><th>主办方</th><th>协同方</th><th>已逾期</th><th>责任链</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td>宏业路积水治理</td><td>宏业东区、宏业西区</td><td>水务局</td><td>物业、居委会</td><td style="color:var(--accent-red)">+15天</td><td>水务局→镇政府→物业</td><td><span class="table-badge bad">超期</span></td></tr>
+            <tr><td>理想城二期电梯安全</td><td>理想城二期</td><td>市场监管局</td><td>物业、维保单位</td><td>—</td><td>市场监管局→维保→物业</td><td><span class="table-badge warn">进行中</span></td></tr>
+            <tr><td>金星庄出租房消防排查</td><td>金星庄村</td><td>消防支队</td><td>村委会、派出所</td><td style="color:var(--accent-orange)">+3天</td><td>消防→派出所→村委会</td><td><span class="table-badge warn">临近</span></td></tr>
+            <tr><td>礼域府供暖管网改造</td><td>礼域府</td><td>住建委</td><td>供热公司、物业</td><td>—</td><td>住建委→供热→物业</td><td><span class="table-badge good">正常</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- After-action Review -->
+      <div class="section-header"><span class="section-title">专项治理复盘</span></div>
+      <div class="chart-card full">
+        <table class="data-table">
+          <thead><tr><th>治理事项</th><th>完成时间</th><th>30天复发</th><th>60天复发</th><th>90天复发</th><th>居民反馈变化</th><th>评估</th></tr></thead>
+          <tbody>
+            <tr><td>理想城一期垃圾分类专项</td><td>2026-04-15</td><td>3.2%</td><td>5.1%</td><td>6.8%</td><td style="color:var(--accent-green)">↓↓ 投诉下降 43%</td><td><span class="table-badge good">有效</span></td></tr>
+            <tr><td>宏业东区供水管网维修</td><td>2026-03-20</td><td>8.5%</td><td>12.3%</td><td>14.1%</td><td style="color:var(--accent-green)">↓ 显著改善</td><td><span class="table-badge good">有效</span></td></tr>
+            <tr><td>金星庄环境整治</td><td>2026-05-01</td><td>18.2%</td><td>—</td><td>—</td><td style="color:var(--accent-orange)">→ 无显著变化</td><td><span class="table-badge warn">持续观察</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         PAGE 6: 数据治理与合规
+         ======================================================== -->
+    <div class="page-panel" id="page-datagov">
+      <!-- Data Quality KPI -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">📊 系统数据覆盖率</div>
+          <div class="kpi-value">84.4<span style="font-size:16px">%</span></div>
+          <div class="kpi-trend up">▲ 2.1%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">⏳ 待核验率</div>
+          <div class="kpi-value">12.4<span style="font-size:16px">%</span></div>
+          <div class="kpi-trend down">▼ 0.8%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">🔄 纠错率</div>
+          <div class="kpi-value">3.2<span style="font-size:16px">%</span></div>
+          <div class="kpi-trend stable">→ 持平</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">🚫 撤回授权率</div>
+          <div class="kpi-value">1.8<span style="font-size:16px">%</span></div>
+          <div class="kpi-trend up">▲ 0.3%</div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-card"><div class="chart-card-title">数据质量趋势</div><div class="chart-container" id="chart-data-quality-trend"></div></div>
+        <div class="chart-card"><div class="chart-card-title">权限访问审计统计</div><div class="chart-container" id="chart-access-audit"></div></div>
+      </div>
+
+      <!-- Data Source Ledger -->
+      <div class="section-header"><span class="section-title">数据源接入台账</span></div>
+      <div class="chart-card full" style="margin-bottom:16px">
+        <table class="data-table">
+          <thead><tr><th>数据源</th><th>接入字段</th><th>用途</th><th>更新频率</th><th>授权依据</th><th>保留期限</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td>CommunitySense 虚拟户口本</td><td>居住关系、Family、确认状态</td><td>居住关系趋势分析</td><td>实时/日汇总</td><td>用户协议+授权</td><td>居住关系存续期</td><td><span class="table-badge good">正常</span></td></tr>
+            <tr><td>CommunitySense 工单系统</td><td>SLA、复发、类型、项目</td><td>物业履约分析</td><td>实时/日汇总</td><td>社区服务协议</td><td>工单关闭后3年</td><td><span class="table-badge good">正常</span></td></tr>
+            <tr><td>CommunitySense 通知中心</td><td>触达率、阅读确认、主题</td><td>信息触达分析</td><td>周汇总</td><td>用户协议+授权</td><td>12个月</td><td><span class="table-badge good">正常</span></td></tr>
+            <tr><td>NCI 聚合计算</td><td>社区级 NCI、趋势、覆盖率</td><td>社区关怀效果评估</td><td>周/月计算</td><td>隐私计算协议</td><td>24个月</td><td><span class="table-badge good">正常</span></td></tr>
+            <tr><td>官方户籍人口（待接入）</td><td>户籍人口数</td><td>口径对照</td><td>年度</td><td>待签署数据共享协议</td><td>按协议约定</td><td><span class="table-badge warn">待授权</span></td></tr>
+            <tr><td>官方流动人口（待接入）</td><td>流动人口数</td><td>口径对照</td><td>年度</td><td>待签署数据共享协议</td><td>按协议约定</td><td><span class="table-badge warn">待授权</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Privacy Risk & Audit -->
+      <div class="chart-row">
+        <div class="chart-card">
+          <div class="chart-card-title">隐私风险提示</div>
+          <div class="alert-list">
+            <div class="alert-item">
+              <div class="alert-icon danger">!</div>
+              <div class="alert-content">
+                <div class="alert-title">小样本聚合风险 — 金星庄村</div>
+                <div class="alert-desc">部分指标统计单元 &lt; 50 户，已自动隐藏为"数据不足"</div>
+              </div>
+              <span class="alert-tag danger">已屏蔽</span>
+            </div>
+            <div class="alert-item">
+              <div class="alert-icon warn">⏰</div>
+              <div class="alert-content">
+                <div class="alert-title">数据长期未更新 — 3个老旧小区</div>
+                <div class="alert-desc">最近居住关系更新超过 90 天，建议发起数据更新提醒</div>
+              </div>
+              <span class="alert-tag warn">建议</span>
+            </div>
+            <div class="alert-item">
+              <div class="alert-icon info">📋</div>
+              <div class="alert-content">
+                <div class="alert-title">异常访问行为</div>
+                <div class="alert-desc">今日检测到 2 次短时间大量社区详情查询，已记录审计日志</div>
+              </div>
+              <span class="alert-tag info">已记录</span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">近期访问审计日志</div>
+          <div class="audit-log">
+            <table class="data-table">
+              <thead><tr><th>时间</th><th>操作者</th><th>操作</th><th>对象</th><th>IP</th></tr></thead>
+              <tbody>
+                <tr><td>09:15:22</td><td>张建国</td><td>查看社区详情</td><td>理想城一期</td><td>10.28.xx</td></tr>
+                <tr><td>09:12:08</td><td>李主任</td><td>导出数据报表</td><td>治理总览</td><td>10.28.xx</td></tr>
+                <tr><td>08:55:41</td><td>王工</td><td>切换数据口径</td><td>官方→系统内</td><td>10.28.xx</td></tr>
+                <tr><td>08:30:15</td><td>系统</td><td>聚合数据更新</td><td>全部社区</td><td>—</td></tr>
+                <tr><td>昨日 17:20</td><td>赵主任</td><td>查看协同详情</td><td>宏业路积水</td><td>10.28.xx</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         PAGE 7: 社区详情（以理想城一期为例）
+         ======================================================== -->
+    <div class="page-panel" id="page-community">
+      <div class="section-header">
+        <span class="section-title">社区详情 · 理想城一期</span>
+        <span class="tag tag-blue">商品房社区</span>
+      </div>
+      <div class="disclaimer">
+        <span class="disclaimer-icon">⚠️</span>
+        社区详情仅展示社区级聚合数据。禁止下钻到楼栋 NCI、房屋、Family、个人工单、私信、原始视频或个人安全事件。
+      </div>
+
+      <!-- Community KPI -->
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">已确认居住人数</div><div class="kpi-value">6,820</div><div class="kpi-trend up">▲ 2.8%</div></div>
+        <div class="kpi-card"><div class="kpi-label">覆盖率</div><div class="kpi-value">92.4<span style="font-size:16px">%</span></div><div class="kpi-trend up">▲ 1.5%</div></div>
+        <div class="kpi-card"><div class="kpi-label">有效 Family 数</div><div class="kpi-value">2,480</div><div class="kpi-trend stable">→ 持平</div></div>
+        <div class="kpi-card"><div class="kpi-label">NCI 当前值</div><div class="kpi-value" style="color:var(--accent-green)">71</div><div class="kpi-trend up">▲ +13（较行动前）</div></div>
+        <div class="kpi-card"><div class="kpi-label">物业工单按时率</div><div class="kpi-value">88.3<span style="font-size:16px">%</span></div><div class="kpi-trend up">▲ 2.1%</div></div>
+        <div class="kpi-card"><div class="kpi-label">协同按时完成率</div><div class="kpi-value">82.1<span style="font-size:16px">%</span></div><div class="kpi-trend up">▲ 5.2%</div></div>
+      </div>
+
+      <!-- Detail Charts -->
+      <div class="chart-row">
+        <div class="chart-card"><div class="chart-card-title">居住关系变化（近6个月）</div><div class="chart-container" id="chart-comm-residence"></div></div>
+        <div class="chart-card"><div class="chart-card-title">服务与通知触达趋势</div><div class="chart-container" id="chart-comm-service"></div></div>
+        <div class="chart-card"><div class="chart-card-title">物业履约趋势</div><div class="chart-container" id="chart-comm-property"></div></div>
+        <div class="chart-card"><div class="chart-card-title">协同与问题复发趋势</div><div class="chart-container" id="chart-comm-collab"></div></div>
+      </div>
+
+      <!-- Action Review -->
+      <div class="section-header"><span class="section-title">已实施行动与效果复盘</span></div>
+      <div class="chart-card full" style="margin-bottom:20px">
+        <table class="data-table">
+          <thead><tr><th>行动时间</th><th>行动内容</th><th>投入资源</th><th>行动前指标</th><th>行动后指标</th><th>变化</th><th>持续效果</th></tr></thead>
+          <tbody>
+            <tr><td>2026-03</td><td>增加社区文化活动频次</td><td>居委会+志愿者</td><td>NCI 58</td><td>NCI 65</td><td style="color:var(--accent-green)">+7</td><td>60天后 NCI 稳定在 64-68</td></tr>
+            <tr><td>2026-04</td><td>垃圾分类专项治理</td><td>物业+城管</td><td>投诉 47件/月</td><td>投诉 12件/月</td><td style="color:var(--accent-green)">↓ 74%</td><td>90天后复发率 6.8%</td></tr>
+            <tr><td>2026-05</td><td>助老服务转介优化</td><td>居委会+养老机构</td><td>等待 8.5天</td><td>等待 3.2天</td><td style="color:var(--accent-green)">↓ 62%</td><td>持续改善中</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============================================================
+     JavaScript: Navigation + ECharts + Leaflet Map
+     ============================================================ -->
+<script>
+(function(){
+'use strict';
+
+// ============================================================
+// Navigation
+// ============================================================
+const pageTitles = {
+  overview:'治理总览',
+  population:'居住与人口',
+  service:'社区服务与连接',
+  property:'物业履约与公共设施',
+  collaboration:'协同治理与问题复发',
+  datagov:'数据治理与合规',
+  community:'社区详情'
+};
+
+const navItems = document.querySelectorAll('.nav-item');
+const pagePanels = document.querySelectorAll('.page-panel');
+const pageTitleEl = document.getElementById('pageTitle');
+const charts = {}; // store chart instances
+
+function switchPage(pageId){
+  navItems.forEach(n=>n.classList.remove('active'));
+  pagePanels.forEach(p=>p.classList.remove('active'));
+  const nav = document.querySelector(`[data-page="${pageId}"]`);
+  const panel = document.getElementById('page-'+pageId);
+  if(nav) nav.classList.add('active');
+  if(panel) panel.classList.add('active');
+  pageTitleEl.textContent = pageTitles[pageId]||pageId;
+  // resize all charts after switching
+  setTimeout(resizeAllCharts, 150);
+}
+
+navItems.forEach(item=>{
+  item.addEventListener('click',()=>{
+    switchPage(item.dataset.page);
+  });
+});
+
+// ============================================================
+// ECharts Utility
+// ============================================================
+function initChart(containerId){
+  const dom = document.getElementById(containerId);
+  if(!dom) return null;
+  if(charts[containerId]){
+    charts[containerId].dispose();
+  }
+  const chart = echarts.init(dom,'dark');
+  charts[containerId]=chart;
+  return chart;
+}
+
+function resizeAllCharts(){
+  Object.values(charts).forEach(c=>{try{c.resize()}catch(e){}});
+}
+
+window.addEventListener('resize',resizeAllCharts);
+
+// Macros for consistent styling
+const textColor='#94a3b8';
+const axisLine={lineStyle:{color:'#1a3050'}};
+const splitLine={lineStyle:{color:'#1a3050',type:'dashed'}};
+const legendStyle={textStyle:{color:textColor,fontSize:11}};
+
+// ============================================================
+// Chart 1: 居住关系变化趋势 (Overview)
+// ============================================================
+(function(){
+  const chart=initChart('chart-residence-trend');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['1月','2月','3月','4月','5月','6月'],axisLine},
+    yAxis:{type:'value',splitLine,name:'人数',nameTextStyle:{color:textColor}},
+    series:[
+      {name:'新增入住',type:'line',data:[320,280,410,360,450,380],smooth:true,lineStyle:{color:'#10b981'},itemStyle:{color:'#10b981'},areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(16,185,129,0.2)'},{offset:1,color:'rgba(16,185,129,0)'}])}},
+      {name:'搬离',type:'line',data:[180,220,190,240,210,200],smooth:true,lineStyle:{color:'#ef4444'},itemStyle:{color:'#ef4444'},areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(239,68,68,0.2)'},{offset:1,color:'rgba(239,68,68,0)'}])}},
+      {name:'待核验',type:'line',data:[420,380,350,310,290,270],smooth:true,lineStyle:{color:'#f59e0b'},itemStyle:{color:'#f59e0b'},areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(245,158,11,0.2)'},{offset:1,color:'rgba(245,158,11,0)'}])}}
+    ]
+  });
+})();
+
+// Chart 2: 服务与通知触达趋势 (Overview)
+(function(){
+  const chart=initChart('chart-service-trend');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['1月','2月','3月','4月','5月','6月'],axisLine},
+    yAxis:[
+      {type:'value',name:'触达率(%)',splitLine,nameTextStyle:{color:textColor},max:100},
+      {type:'value',name:'数量',splitLine:{show:false},nameTextStyle:{color:textColor}}
+    ],
+    series:[
+      {name:'通知触达率',type:'line',data:[76,78,81,82,84,86],smooth:true,lineStyle:{color:'#3b82f6'},itemStyle:{color:'#3b82f6'}},
+      {name:'服务完成率',type:'line',data:[88,90,89,91,92,91.3],smooth:true,lineStyle:{color:'#10b981'},itemStyle:{color:'#10b981'}},
+      {name:'服务申请量',type:'bar',yAxisIndex:1,data:[3800,4100,4300,4600,4700,4821],itemStyle:{color:'rgba(139,92,246,0.4)',borderRadius:4}}
+    ]
+  });
+})();
+
+// Chart 3: 物业履约趋势 (Overview)
+(function(){
+  const chart=initChart('chart-property-trend');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['1月','2月','3月','4月','5月','6月'],axisLine},
+    yAxis:{type:'value',name:'%',splitLine,nameTextStyle:{color:textColor},max:100},
+    series:[
+      {name:'SLA达标率',type:'line',data:[87,86.5,85,86,84,84.7],smooth:true,lineStyle:{color:'#06b6d4'},itemStyle:{color:'#06b6d4'}},
+      {name:'复发率',type:'line',data:[16,17,18,17.5,20,18.3],smooth:true,lineStyle:{color:'#f59e0b'},itemStyle:{color:'#f59e0b'}},
+      {name:'维保按期率',type:'line',data:[92,93,91,92,90,91.2],smooth:true,lineStyle:{color:'#10b981'},itemStyle:{color:'#10b981'}}
+    ]
+  });
+})();
+
+// Chart 4: NCI趋势 (Overview)
+(function(){
+  const chart=initChart('chart-nci-trend');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['1月','2月','3月','4月','5月','6月'],axisLine},
+    yAxis:{type:'value',name:'NCI指数',splitLine,nameTextStyle:{color:textColor}},
+    series:[
+      {name:'镇域平均NCI',type:'line',data:[62,63,64,65,64.5,66],smooth:true,lineStyle:{color:'#3b82f6',width:2},itemStyle:{color:'#3b82f6'}},
+      {name:'正向社区占比',type:'bar',data:[70,73,75,78,76,81],itemStyle:{color:'rgba(16,185,129,0.35)',borderRadius:4},barGap:'30%'}
+    ]
+  });
+})();
+
+// Chart 5: 居住关系详情 (Population)
+(function(){
+  const chart=initChart('chart-residence-detail');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['1月','2月','3月','4月','5月','6月'],axisLine},
+    yAxis:{type:'value',splitLine,name:'人数',nameTextStyle:{color:textColor}},
+    series:[
+      {name:'已确认居住人数(万)',type:'line',data:[84.5,85.2,86.1,87.3,88.5,89.3],smooth:true,lineStyle:{color:'#3b82f6',width:2},itemStyle:{color:'#3b82f6'},areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(59,130,246,0.15)'},{offset:1,color:'rgba(59,130,246,0)'}])}},
+      {name:'入住',type:'bar',data:[320,280,410,360,450,380],itemStyle:{color:'rgba(16,185,129,0.6)',borderRadius:[4,4,0,0]},stack:'flow'},
+      {name:'搬离',type:'bar',data:[-180,-220,-190,-240,-210,-200],itemStyle:{color:'rgba(239,68,68,0.6)',borderRadius:[0,0,4,4]},stack:'flow2'}
+    ]
+  });
+})();
+
+// Chart 6: 覆盖率与待核验率 (Population)
+(function(){
+  const chart=initChart('chart-coverage');
+  if(!chart)return;
+  const communities=['理想城一期','理想城二期','礼域府','宏业东区','宏业西区','金星庄','新建保租房A','新建保租房B','兴海家园','瑞海家园'];
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:communities,axisLine,axisLabel:{rotate:30,fontSize:10}},
+    yAxis:[
+      {type:'value',name:'覆盖率(%)',splitLine,nameTextStyle:{color:textColor},max:100},
+      {type:'value',name:'待核验率(%)',splitLine:{show:false},nameTextStyle:{color:textColor},max:40}
+    ],
+    series:[
+      {name:'覆盖率',type:'bar',data:[92,89,88,82,79,68,94,96,85,80],itemStyle:{color:'rgba(59,130,246,0.7)',borderRadius:4}},
+      {name:'待核验率',type:'line',yAxisIndex:1,data:[5,8,7,18,16,25,4,3,11,15],lineStyle:{color:'#f59e0b'},itemStyle:{color:'#f59e0b'},symbol:'triangle',symbolSize:10}
+    ]
+  });
+})();
+
+// Chart 7: 数据质量分布 (Population)
+(function(){
+  const chart=initChart('chart-data-quality');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'item'},
+    legend:legendStyle,
+    series:[{
+      type:'pie',radius:['45%','70%'],center:['50%','55%'],
+      label:{color:textColor,fontSize:11},
+      data:[
+        {value:78.6,name:'已确认有效',itemStyle:{color:'#10b981'}},
+        {value:12.4,name:'待核验',itemStyle:{color:'#f59e0b'}},
+        {value:5.8,name:'过期',itemStyle:{color:'#ef4444'}},
+        {value:3.2,name:'已纠错',itemStyle:{color:'#3b82f6'}}
+      ]
+    }]
+  });
+})();
+
+// Chart 8: NCI 社区比较 (Service)
+(function(){
+  const chart=initChart('chart-nci-community');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:{...legendStyle,bottom:0},
+    grid:{left:'3%',right:'5%',bottom:'12%',containLabel:true},
+    xAxis:{type:'category',data:['理想城一期','理想城二期','礼域府','宏业东区','宏业西区','金星庄','兴海家园','瑞海家园','新建保租房A','新建保租房B'],axisLine,axisLabel:{rotate:30,fontSize:11}},
+    yAxis:{type:'value',name:'NCI',splitLine,nameTextStyle:{color:textColor}},
+    series:[
+      {name:'1月前',type:'bar',data:[58,65,72,62,55,45,68,60,75,78],itemStyle:{color:'rgba(100,116,139,0.5)',borderRadius:4}},
+      {name:'当前',type:'bar',data:[71,67,74,67,58,52,70,63,78,80],itemStyle:{color:'rgba(59,130,246,0.7)',borderRadius:4}}
+    ]
+  });
+})();
+
+// Chart 9: 通知触达与阅读确认 (Service)
+(function(){
+  const chart=initChart('chart-notify-reach');
+  if(!chart)return;
+  const c=['理想城一期','理想城二期','礼域府','宏业东区','宏业西区','金星庄','兴海家园','瑞海家园'];
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:c,axisLine,axisLabel:{rotate:25,fontSize:10}},
+    yAxis:{type:'value',splitLine,name:'%',nameTextStyle:{color:textColor},max:100},
+    series:[
+      {name:'送达率',type:'bar',data:[95,92,94,88,85,72,90,87],itemStyle:{color:'rgba(59,130,246,0.7)',borderRadius:4},barGap:'20%'},
+      {name:'阅读确认率',type:'bar',data:[82,78,80,68,64,52,75,70],itemStyle:{color:'rgba(16,185,129,0.7)',borderRadius:4}}
+    ]
+  });
+})();
+
+// Chart 10: 信箱主题分布 (Service)
+(function(){
+  const chart=initChart('chart-mailbox-topic');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'item'},
+    legend:legendStyle,
+    series:[{
+      type:'pie',radius:['40%','65%'],center:['50%','55%'],
+      label:{color:textColor,fontSize:10},
+      data:[
+        {value:28,name:'物业服务',itemStyle:{color:'#3b82f6'}},
+        {value:22,name:'公共设施',itemStyle:{color:'#06b6d4'}},
+        {value:18,name:'社区服务',itemStyle:{color:'#10b981'}},
+        {value:15,name:'环境卫生',itemStyle:{color:'#8b5cf6'}},
+        {value:10,name:'安全管理',itemStyle:{color:'#f59e0b'}},
+        {value:7,name:'其他',itemStyle:{color:'#64748b'}}
+      ]
+    }]
+  });
+})();
+
+// Chart 11: 服务申请与完成量 (Service)
+(function(){
+  const chart=initChart('chart-service-type');
+  if(!chart)return;
+  const types=['养老服务','医疗服务','法律服务','助餐服务','就业服务','儿童服务','其他'];
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:types,axisLine,axisLabel:{fontSize:10}},
+    yAxis:{type:'value',splitLine,name:'件数',nameTextStyle:{color:textColor}},
+    series:[
+      {name:'申请量',type:'bar',data:[820,680,420,560,380,290,210],itemStyle:{color:'rgba(59,130,246,0.7)',borderRadius:4},barGap:'20%'},
+      {name:'完成量',type:'bar',data:[750,620,380,510,350,260,190],itemStyle:{color:'rgba(16,185,129,0.7)',borderRadius:4}}
+    ]
+  });
+})();
+
+// Chart 12: 服务转介完成趋势 (Service)
+(function(){
+  const chart=initChart('chart-referral-trend');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['1月','2月','3月','4月','5月','6月'],axisLine},
+    yAxis:{type:'value',splitLine,nameTextStyle:{color:textColor}},
+    series:[
+      {name:'转介量',type:'bar',data:[180,210,195,230,245,260],itemStyle:{color:'rgba(139,92,246,0.5)',borderRadius:4}},
+      {name:'完成量',type:'line',data:[160,190,175,210,225,240],smooth:true,lineStyle:{color:'#10b981'},itemStyle:{color:'#10b981'}},
+      {name:'平均等待(天)',type:'line',data:[8.2,7.5,7.8,6.5,6.2,5.8],smooth:true,lineStyle:{color:'#f59e0b',type:'dashed'},itemStyle:{color:'#f59e0b'}}
+    ]
+  });
+})();
+
+// Chart 13: 工单量与SLA (Property)
+(function(){
+  const chart=initChart('chart-workorder-sla');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['1月','2月','3月','4月','5月','6月'],axisLine},
+    yAxis:[
+      {type:'value',name:'件数',splitLine,nameTextStyle:{color:textColor}},
+      {type:'value',name:'%',splitLine:{show:false},nameTextStyle:{color:textColor},max:100}
+    ],
+    series:[
+      {name:'工单量',type:'bar',data:[3200,3500,3400,3700,3650,3842],itemStyle:{color:'rgba(59,130,246,0.5)',borderRadius:4}},
+      {name:'按时率',type:'line',yAxisIndex:1,data:[87,86.5,85,86,84,84.7],smooth:true,lineStyle:{color:'#10b981'},itemStyle:{color:'#10b981'}},
+      {name:'超时率',type:'line',yAxisIndex:1,data:[13,13.5,15,14,16,15.3],smooth:true,lineStyle:{color:'#ef4444'},itemStyle:{color:'#ef4444'}}
+    ]
+  });
+})();
+
+// Chart 14: 社区超时率与复发率 (Property)
+(function(){
+  const chart=initChart('chart-community-delay');
+  if(!chart)return;
+  const c=['理想城一期','理想城二期','礼域府','宏业东区','宏业西区','金星庄','新建保租房A','新建保租房B','兴海家园','瑞海家园'];
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:c,axisLine,axisLabel:{rotate:30,fontSize:9}},
+    yAxis:{type:'value',name:'%',splitLine,nameTextStyle:{color:textColor},max:45},
+    series:[
+      {name:'超时率',type:'bar',data:[11.7,14.2,9.8,18.5,20.3,27.6,5.3,6.1,12.8,15.4],itemStyle:{color:'rgba(239,68,68,0.65)',borderRadius:4},barGap:'20%'},
+      {name:'复发率',type:'bar',data:[14.2,22.1,11.5,22.8,26.4,31.2,6.8,7.5,16.2,19.8],itemStyle:{color:'rgba(245,158,11,0.65)',borderRadius:4}}
+    ]
+  });
+})();
+
+// Chart 15: 设施维保状态 (Property)
+(function(){
+  const chart=initChart('chart-facility-status');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'item'},
+    legend:{...legendStyle,bottom:0},
+    series:[{
+      type:'pie',radius:['45%','70%'],center:['50%','48%'],
+      label:{color:textColor,fontSize:10},
+      data:[
+        {value:91.2,name:'按期完成',itemStyle:{color:'#10b981'}},
+        {value:5.6,name:'临期（30天内）',itemStyle:{color:'#f59e0b'}},
+        {value:3.2,name:'已逾期',itemStyle:{color:'#ef4444'}}
+      ]
+    }]
+  });
+})();
+
+// Chart 16: 公共区域事件处理时效 (Property)
+(function(){
+  const chart=initChart('chart-event-handling');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['理想城一期','理想城二期','礼域府','宏业东区','宏业西区','金星庄','兴海家园','瑞海家园'],axisLine,axisLabel:{rotate:25,fontSize:10}},
+    yAxis:{type:'value',name:'小时',splitLine,nameTextStyle:{color:textColor}},
+    series:[
+      {name:'平均响应时间',type:'bar',data:[2.1,3.5,1.8,4.2,5.1,8.3,2.4,3.8],itemStyle:{color:'rgba(59,130,246,0.7)',borderRadius:4},barGap:'20%'},
+      {name:'平均处理时间',type:'bar',data:[8.5,14.2,6.8,18.5,22.1,35.6,9.2,15.8],itemStyle:{color:'rgba(139,92,246,0.7)',borderRadius:4}}
+    ]
+  });
+})();
+
+// Chart 17: 跨主体事件量与超时率 (Collaboration)
+(function(){
+  const chart=initChart('chart-cross-event');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['1月','2月','3月','4月','5月','6月'],axisLine},
+    yAxis:[
+      {type:'value',name:'事件量',splitLine,nameTextStyle:{color:textColor}},
+      {type:'value',name:'%',splitLine:{show:false},nameTextStyle:{color:textColor},max:40}
+    ],
+    series:[
+      {name:'跨主体事件总量',type:'bar',data:[980,1050,1120,1180,1200,1247],itemStyle:{color:'rgba(139,92,246,0.5)',borderRadius:4}},
+      {name:'超时率',type:'line',yAxisIndex:1,data:[28,26,25,27,24,23.8],smooth:true,lineStyle:{color:'#ef4444'},itemStyle:{color:'#ef4444'}},
+      {name:'按时完成率',type:'line',yAxisIndex:1,data:[68,70,72,71,73,76.2],smooth:true,lineStyle:{color:'#10b981'},itemStyle:{color:'#10b981'}}
+    ]
+  });
+})();
+
+// Chart 18: 复发趋势 (Collaboration)
+(function(){
+  const chart=initChart('chart-recurrence-type');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:{...legendStyle,bottom:0},
+    grid:{left:'3%',right:'5%',bottom:'12%',containLabel:true},
+    xAxis:{type:'category',data:['电梯故障','供水问题','环境卫生','供暖问题','门禁系统','停车管理','公共照明','下水道'],axisLine,axisLabel:{rotate:25,fontSize:10}},
+    yAxis:{type:'value',name:'复发率(%)',splitLine,nameTextStyle:{color:textColor}},
+    series:[
+      {name:'30天复发',type:'bar',data:[18,12,22,8,15,25,10,20],itemStyle:{color:'rgba(245,158,11,0.6)',borderRadius:4},barGap:'15%'},
+      {name:'60天复发',type:'bar',data:[25,18,30,12,22,35,15,28],itemStyle:{color:'rgba(239,68,68,0.5)',borderRadius:4}},
+      {name:'90天复发',type:'bar',data:[32,24,38,16,28,42,20,34],itemStyle:{color:'rgba(185,28,28,0.6)',borderRadius:4}}
+    ]
+  });
+})();
+
+// Chart 19: 转化漏斗 (Collaboration)
+(function(){
+  const chart=initChart('chart-funnel');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'item'},
+    series:[{
+      type:'funnel',left:'15%',width:'70%',
+      sort:'descending',gap:2,
+      label:{show:true,position:'inside',fontSize:13,color:'#fff'},
+      data:[
+        {value:15600,name:'通知反馈 · 15,600',itemStyle:{color:'#3b82f6'}},
+        {value:8200,name:'信箱事项 · 8,200',itemStyle:{color:'#06b6d4'}},
+        {value:3842,name:'物业工单 · 3,842',itemStyle:{color:'#8b5cf6'}},
+        {value:1247,name:'协同任务 · 1,247',itemStyle:{color:'#f59e0b'}},
+        {value:950,name:'已完成协同 · 950',itemStyle:{color:'#10b981'}}
+      ]
+    }]
+  });
+})();
+
+// Chart 20: 数据质量趋势 (DataGov)
+(function(){
+  const chart=initChart('chart-data-quality-trend');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['1月','2月','3月','4月','5月','6月'],axisLine},
+    yAxis:{type:'value',splitLine,name:'%',nameTextStyle:{color:textColor},max:30},
+    series:[
+      {name:'待核验率',type:'line',data:[15.2,14.8,14.1,13.5,13.0,12.4],smooth:true,lineStyle:{color:'#f59e0b'},itemStyle:{color:'#f59e0b'},areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(245,158,11,0.15)'},{offset:1,color:'rgba(245,158,11,0)'}])}},
+      {name:'纠错率',type:'line',data:[4.1,3.8,3.5,3.3,3.2,3.2],smooth:true,lineStyle:{color:'#3b82f6'},itemStyle:{color:'#3b82f6'}},
+      {name:'撤回率',type:'line',data:[1.2,1.4,1.5,1.6,1.7,1.8],smooth:true,lineStyle:{color:'#ef4444'},itemStyle:{color:'#ef4444'}}
+    ]
+  });
+})();
+
+// Chart 21: 权限访问审计 (DataGov)
+(function(){
+  const chart=initChart('chart-access-audit');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['镇领导','部门负责人','数据管理员','居委会','物业','第三方'],axisLine,axisLabel:{fontSize:10}},
+    yAxis:{type:'value',splitLine,name:'访问次数',nameTextStyle:{color:textColor}},
+    series:[
+      {name:'正常访问',type:'bar',data:[320,580,210,890,450,120],stack:'total',itemStyle:{color:'rgba(59,130,246,0.7)',borderRadius:[0,0,0,0]}},
+      {name:'异常调用',type:'bar',data:[0,2,0,1,0,3],stack:'total',itemStyle:{color:'rgba(239,68,68,0.8)',borderRadius:[4,4,0,0]}}
+    ]
+  });
+})();
+
+// Chart 22-25: Community Detail Charts
+// Residence
+(function(){
+  const chart=initChart('chart-comm-residence');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['1月','2月','3月','4月','5月','6月'],axisLine},
+    yAxis:{type:'value',splitLine,nameTextStyle:{color:textColor}},
+    series:[
+      {name:'入住',type:'bar',data:[28,22,35,30,38,32],itemStyle:{color:'rgba(16,185,129,0.7)',borderRadius:[4,4,0,0]},stack:'in'},
+      {name:'搬离',type:'bar',data:[15,18,14,20,16,14],itemStyle:{color:'rgba(239,68,68,0.7)',borderRadius:[0,0,4,4]},stack:'out'},
+      {name:'净变化',type:'line',data:[13,17,38,48,70,88],smooth:true,lineStyle:{color:'#3b82f6',width:2},itemStyle:{color:'#3b82f6'}}
+    ]
+  });
+})();
+
+// Service
+(function(){
+  const chart=initChart('chart-comm-service');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['1月','2月','3月','4月','5月','6月'],axisLine},
+    yAxis:{type:'value',splitLine,name:'%',nameTextStyle:{color:textColor},max:100},
+    series:[
+      {name:'通知触达率',type:'line',data:[82,85,87,88,91,92],smooth:true,lineStyle:{color:'#3b82f6'},itemStyle:{color:'#3b82f6'}},
+      {name:'服务完成率',type:'line',data:[88,90,91,92,93,94],smooth:true,lineStyle:{color:'#10b981'},itemStyle:{color:'#10b981'}},
+      {name:'NCI',type:'line',data:[58,61,63,65,68,71],smooth:true,lineStyle:{color:'#8b5cf6'},itemStyle:{color:'#8b5cf6'}}
+    ]
+  });
+})();
+
+// Property
+(function(){
+  const chart=initChart('chart-comm-property');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['1月','2月','3月','4月','5月','6月'],axisLine},
+    yAxis:{type:'value',splitLine,name:'%',nameTextStyle:{color:textColor},max:100},
+    series:[
+      {name:'SLA达标率',type:'line',data:[85,86,84,87,86,88.3],smooth:true,lineStyle:{color:'#06b6d4'},itemStyle:{color:'#06b6d4'}},
+      {name:'复发率',type:'line',data:[18,16,15,14,13,14.2],smooth:true,lineStyle:{color:'#f59e0b'},itemStyle:{color:'#f59e0b'}},
+      {name:'维保按期率',type:'line',data:[91,92,90,93,92,93.5],smooth:true,lineStyle:{color:'#10b981'},itemStyle:{color:'#10b981'}}
+    ]
+  });
+})();
+
+// Collaboration
+(function(){
+  const chart=initChart('chart-comm-collab');
+  if(!chart)return;
+  chart.setOption({
+    tooltip:{trigger:'axis'},
+    legend:legendStyle,
+    grid:{left:'3%',right:'5%',bottom:'3%',containLabel:true},
+    xAxis:{type:'category',data:['1月','2月','3月','4月','5月','6月'],axisLine},
+    yAxis:{type:'value',splitLine,nameTextStyle:{color:textColor}},
+    series:[
+      {name:'协同事件量',type:'bar',data:[45,48,52,50,55,58],itemStyle:{color:'rgba(139,92,246,0.5)',borderRadius:4}},
+      {name:'按时完成数',type:'bar',data:[35,38,42,40,46,48],itemStyle:{color:'rgba(16,185,129,0.6)',borderRadius:4}},
+      {name:'复发件',type:'line',data:[8,7,6,5,4,3],smooth:true,lineStyle:{color:'#ef4444'},itemStyle:{color:'#ef4444'}}
+    ]
+  });
+})();
+
+// ============================================================
+// Leaflet Map — 西红门镇社区地图
+// ============================================================
+(function(){
+  const mapContainer = document.getElementById('overviewMap');
+  if(!mapContainer)return;
+  // Wait for DOM to render dimensions
+  setTimeout(()=>{
+    const map = L.map('overviewMap', {
+      center: [39.795, 116.335],
+      zoom: 13,
+      maxZoom: 15,
+      minZoom: 11,
+      zoomControl: true,
+      attributionControl: false
+    });
+
+    // Dark tile layer
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 15
+    }).addTo(map);
+
+    // Community boundary data (mock GeoJSON-like polygons)
+    const communities = [
+      {name:'理想城一期',center:[39.800,116.328],color:'#10b981',nci:71,pop:6820,cov:92.4,radius:900},
+      {name:'理想城二期',center:[39.802,116.332],color:'#f59e0b',nci:67,pop:5800,cov:89.0,radius:800},
+      {name:'礼域府',center:[39.793,116.325],color:'#10b981',nci:74,pop:4200,cov:88.0,radius:750},
+      {name:'宏业东区',center:[39.790,116.340],color:'#f59e0b',nci:67,pop:3900,cov:82.0,radius:700},
+      {name:'宏业西区',center:[39.788,116.336],color:'#ef4444',nci:58,pop:3500,cov:79.0,radius:650},
+      {name:'金星庄',center:[39.785,116.345],color:'#ef4444',nci:52,pop:4200,cov:68.2,radius:750},
+      {name:'兴海家园',center:[39.797,116.318],color:'#10b981',nci:70,pop:5100,cov:85.0,radius:700},
+      {name:'瑞海家园',center:[39.792,116.315],color:'#f59e0b',nci:63,pop:4600,cov:80.0,radius:680},
+      {name:'新建保租房A',center:[39.805,116.340],color:'#10b981',nci:78,pop:3200,cov:94.0,radius:600},
+      {name:'新建保租房B',center:[39.808,116.338],color:'#10b981',nci:80,pop:2800,cov:96.0,radius:550}
+    ];
+
+    communities.forEach(c=>{
+      // Draw circle as community boundary proxy
+      const circle = L.circle(c.center, {
+        radius: c.radius,
+        color: c.color,
+        fillColor: c.color,
+        fillOpacity: 0.2,
+        weight: 2
+      }).addTo(map);
+
+      // Label
+      L.marker(c.center, {
+        icon: L.divIcon({
+          className: '',
+          html: `<div style="color:#e8ecf1;font-size:11px;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,0.8);white-space:nowrap">${c.name}</div>`,
+          iconSize: [80,20],
+          iconAnchor: [40,10]
+        })
+      }).addTo(map);
+
+      // Tooltip on hover
+      circle.bindTooltip(`
+        <div class="map-tooltip">
+          <strong>${c.name}</strong>
+          <div class="tt-row"><span>NCI指数</span><span style="color:${c.color};font-weight:600">${c.nci}</span></div>
+          <div class="tt-row"><span>已确认居住人数</span><span>${c.pop.toLocaleString()}</span></div>
+          <div class="tt-row"><span>覆盖率</span><span>${c.cov}%</span></div>
+        </div>
+      `,{direction:'top',offset:[0,-10]});
+
+      // Click to navigate to community detail
+      circle.on('click',()=>{
+        if(window.switchPage) window.switchPage('community');
+      });
+    });
+
+    // Expose switchPage for map click
+    window.switchPage = switchPage;
+
+    // Fit bounds
+    const allCenters = communities.map(c=>c.center);
+    if(allCenters.length>0){
+      const bounds = L.latLngBounds(allCenters);
+      map.fitBounds(bounds.pad(0.15));
+    }
+  },300);
+})();
+
+// ============================================================
+// Time update
+// ============================================================
+const updateTimeEl = document.getElementById('updateTime');
+if(updateTimeEl){
+  setInterval(()=>{
+    const now=new Date();
+    updateTimeEl.textContent=now.toISOString().slice(0,16).replace('T',' ');
+  },60000);
+}
+
+// ============================================================
+// Filter change handlers
+// ============================================================
+document.getElementById('filterPeriod')?.addEventListener('change',(e)=>{
+  console.log('Period changed:',e.target.value);
+});
+document.getElementById('filterType')?.addEventListener('change',(e)=>{
+  console.log('Type changed:',e.target.value);
+});
+document.getElementById('filterCaliber')?.addEventListener('change',(e)=>{
+  console.log('Caliber changed:',e.target.value);
+});
+
+// ============================================================
+// Government Care Task API
+// ============================================================
+
+const COMMUNITY_API_BASE = 'http://127.0.0.1:5000';
+
+async function createGovernmentCareTask() {
+  const button = document.getElementById('createCareTaskBtn');
+  const statusText = document.getElementById('careSubmitStatus');
+  const resultBox = document.getElementById('careTaskResult');
+
+  const serviceType = document
+    .getElementById('careServiceType')
+    .value
+    .trim();
+
+  const targetScope = document
+    .getElementById('careTargetScope')
+    .value
+    .trim();
+
+  const governmentText = document
+    .getElementById('careGovernmentText')
+    .value
+    .trim();
+
+  if (!targetScope || !governmentText) {
+    statusText.textContent = '请填写目标范围和正式任务。';
+    statusText.style.color = 'var(--accent-orange)';
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = '正在生成…';
+
+  statusText.textContent = '正在调用 CommunitySense 后端';
+  statusText.style.color = 'var(--text-muted)';
+
+  resultBox.style.display = 'none';
+
+  try {
+    const response = await fetch(
+      `${COMMUNITY_API_BASE}/api/v1/care-tasks`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          service_type: serviceType,
+          target_scope: targetScope,
+          created_by: '西红门镇社区工作台',
+          government_text: governmentText
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || `请求失败：${response.status}`
+      );
+    }
+
+    const task = data.task;
+
+    document.getElementById(
+      'careTaskId'
+    ).textContent = task.id;
+
+    document.getElementById(
+      'careTaskStatus'
+    ).textContent = task.status;
+
+    document.getElementById(
+      'carePropertySummary'
+    ).textContent = task.property_summary;
+
+    document.getElementById(
+      'careResidentMessage'
+    ).textContent = task.resident_message;
+
+    document.getElementById(
+      'careModelMode'
+    ).textContent = (
+      task.model_mode === 'live'
+        ? '真实模型'
+        : '安全模板模式'
+    );
+
+    resultBox.style.display = 'block';
+
+    statusText.textContent = '任务已进入物业待确认队列';
+    statusText.style.color = 'var(--accent-green)';
+
+    console.log(
+      'Government care task created:',
+      data
+    );
+  } catch (error) {
+    console.error(
+      'Create care task failed:',
+      error
+    );
+
+    statusText.textContent = `创建失败：${error.message}`;
+    statusText.style.color = 'var(--accent-red)';
+  } finally {
+    button.disabled = false;
+    button.textContent = '生成物业执行任务';
+  }
+}
+
+document
+  .getElementById('createCareTaskBtn')
+  ?.addEventListener(
+    'click',
+    createGovernmentCareTask
+  );
+
+// ============================================================
+// Keyboard navigation
+// ============================================================
+const pageOrder=['overview','population','service','property','collaboration','datagov','community'];
+document.addEventListener('keydown',(e)=>{
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    const current=pageOrder.findIndex(p=>document.getElementById('page-'+p).classList.contains('active'));
+    let next;
+    if(e.key==='ArrowDown') next=(current+1)%pageOrder.length;
+    else next=(current-1+pageOrder.length)%pageOrder.length;
+    switchPage(pageOrder[next]);
+  }
+});
+
+})();
+</script>
+</body>
+</html>

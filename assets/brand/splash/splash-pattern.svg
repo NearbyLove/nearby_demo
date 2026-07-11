@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="375" height="812" viewBox="0 0 375 812">
+  <defs>
+    <pattern id="dot-network" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+      <!-- Connecting lines -->
+      <line x1="15" y1="15" x2="45" y2="15" stroke="#C45C3E" stroke-width="0.5" stroke-opacity="0.08"/>
+      <line x1="15" y1="15" x2="30" y2="45" stroke="#C45C3E" stroke-width="0.5" stroke-opacity="0.06"/>
+      <line x1="45" y1="15" x2="30" y2="45" stroke="#C45C3E" stroke-width="0.5" stroke-opacity="0.06"/>
+      <line x1="15" y1="15" x2="15" y2="45" stroke="#C45C3E" stroke-width="0.4" stroke-opacity="0.05"/>
+      <line x1="45" y1="15" x2="45" y2="45" stroke="#C45C3E" stroke-width="0.4" stroke-opacity="0.05"/>
+      <line x1="30" y1="45" x2="30" y2="60" stroke="#C45C3E" stroke-width="0.5" stroke-opacity="0.06"/>
+      <line x1="30" y1="45" x2="60" y2="60" stroke="#C45C3E" stroke-width="0.4" stroke-opacity="0.05"/>
+      <line x1="30" y1="45" x2="0" y2="60" stroke="#C45C3E" stroke-width="0.4" stroke-opacity="0.05"/>
+      <!-- Nodes -->
+      <circle cx="15" cy="15" r="2" fill="#C45C3E" fill-opacity="0.12"/>
+      <circle cx="45" cy="15" r="2" fill="#C45C3E" fill-opacity="0.12"/>
+      <circle cx="30" cy="45" r="2.5" fill="#C45C3E" fill-opacity="0.18"/>
+      <circle cx="15" cy="45" r="1.5" fill="#C45C3E" fill-opacity="0.08"/>
+      <circle cx="45" cy="45" r="1.5" fill="#C45C3E" fill-opacity="0.08"/>
+      <circle cx="0" cy="30" r="1.5" fill="#C45C3E" fill-opacity="0.06"/>
+      <circle cx="60" cy="30" r="1.5" fill="#C45C3E" fill-opacity="0.06"/>
+      <circle cx="0" cy="60" r="1.5" fill="#C45C3E" fill-opacity="0.06"/>
+      <circle cx="60" cy="60" r="1.5" fill="#C45C3E" fill-opacity="0.06"/>
+      <circle cx="30" cy="60" r="1.5" fill="#C45C3E" fill-opacity="0.08"/>
+    </pattern>
+    <!-- Center radial glow -->
+    <radialGradient id="center-glow" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#C45C3E" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#C45C3E" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="375" height="812" fill="#FAF7F2"/>
+  <rect width="375" height="812" fill="url(#dot-network)"/>
+  <rect width="375" height="812" fill="url(#center-glow)"/>
+</svg>

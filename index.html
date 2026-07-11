@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NearbyLove × CommunitySense</title>
+  <style>
+    :root { --ink: #20352b; --muted: #6d776f; --paper: #f7f5ef; --green: #315e48; --line: #dce4da; }
+    * { box-sizing: border-box; } body { margin: 0; color: var(--ink); background: radial-gradient(circle at 82% 4%, #dbead8, transparent 32%), var(--paper); font-family: "PingFang SC", "Microsoft YaHei", sans-serif; }
+    main { width: min(1080px, calc(100% - 48px)); margin: 0 auto; padding: 96px 0 72px; }.mark { display: grid; width: 54px; height: 54px; place-items: center; border-radius: 18px; background: var(--green); color: #fff; font-size: 27px; font-weight: 700; }.brand { margin-top: 20px; color: var(--green); font-weight: 700; letter-spacing: 1px; }.hero { max-width: 760px; margin: 32px 0 56px; font-size: clamp(38px, 6vw, 68px); line-height: 1.13; letter-spacing: -2px; }.intro { max-width: 650px; margin: -30px 0 54px; color: var(--muted); font-size: 17px; line-height: 1.8; }.cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }.card { display: flex; min-height: 248px; flex-direction: column; justify-content: space-between; padding: 30px; border: 1px solid var(--line); border-radius: 24px; background: rgba(255,255,255,.88); text-decoration: none; color: inherit; box-shadow: 0 12px 38px rgba(35, 55, 43, .07); transition: transform .18s ease, box-shadow .18s ease; }.card:hover { transform: translateY(-4px); box-shadow: 0 18px 45px rgba(35, 55, 43, .13); }.eyebrow { color: #598069; font-size: 13px; font-weight: 700; }.title { margin-top: 18px; font-size: 31px; font-weight: 700; }.copy { margin-top: 12px; color: var(--muted); line-height: 1.7; }.go { color: var(--green); font-weight: 700; }.foot { margin-top: 56px; color: #849087; font-size: 13px; line-height: 1.7; } @media (max-width: 640px) { main { width: min(100% - 32px, 1080px); padding-top: 56px; }.cards { grid-template-columns: 1fr; }.hero { letter-spacing: -1px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="mark">N</div>
+    <div class="brand">NearbyLove × CommunitySense</div>
+    <h1 class="hero">让附近，重新成为可以共同生活的地方。</h1>
+    <p class="intro">CommunitySense 以“人、场、事”连接社区生活：虚拟户口本理解实际居住关系，公共空间 AI 感知发现匿名场景线索，附近行动把问题转化为居民、物业与居委会可协作、可验证的改善。</p>
+    <section class="cards">
+      <a class="card" href="web/nearbylove-demo.html">
+        <div><div class="eyebrow">NEARBYLOVE · 三端协同体验</div><div class="title">居民、物业、居委会</div><p class="copy">切换三种身份，体验附近行动、通知、信箱、工作地图与 AI 社区管家如何形成闭环。</p></div><div class="go">进入网页体验 →</div>
+      </a>
+      <a class="card" href="web/communitysense-dashboard.html">
+        <div><div class="eyebrow">COMMUNITYSENSE · 政府治理平台</div><div class="title">区域治理大屏</div><p class="copy">从人口、关系连接与社区行动三条主线，观察跨社区的变化趋势与治理效果。</p></div><div class="go">进入治理大屏 →</div>
+      </a>
+    </section>
+    <p class="foot">本在线演示使用预置 Mock 数据，不连接真实身份、房屋、门禁、摄像头或紧急服务。完整源代码、后端启动说明和硬件模拟脚本见本仓库 README。</p>
+  </main>
+</body>
+</html>

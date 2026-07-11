@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <!-- 楼栋主体 -->
+  <rect x="4" y="2" width="16" height="20" rx="2" fill="#2D2420"/>
+  <!-- 窗户网格 - 第一行 -->
+  <rect x="7" y="5" width="3" height="3" rx="0.5" fill="white"/>
+  <rect x="14" y="5" width="3" height="3" rx="0.5" fill="white"/>
+  <!-- 窗户网格 - 第二行 -->
+  <rect x="7" y="10" width="3" height="3" rx="0.5" fill="white"/>
+  <rect x="14" y="10" width="3" height="3" rx="0.5" fill="white"/>
+  <!-- 窗户网格 - 第三行 -->
+  <rect x="7" y="15" width="3" height="3" rx="0.5" fill="white"/>
+  <rect x="14" y="15" width="3" height="3" rx="0.5" fill="white"/>
+  <!-- 门 -->
+  <rect x="10" y="19" width="4" height="3" rx="0.5" fill="white"/>
+</svg>

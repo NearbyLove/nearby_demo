@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+  <!-- 警告三角 -->
+  <path d="M8 1.5L15 14H1L8 1.5Z" fill="#92400E"/>
+  <!-- 感叹号 -->
+  <rect x="7" y="5.5" width="2" height="3.5" rx="1" fill="white"/>
+  <circle cx="8" cy="11" r="1" fill="white"/>
+</svg>
