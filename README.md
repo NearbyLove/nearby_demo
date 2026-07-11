@@ -98,7 +98,7 @@ cp .env.example .env
 - AI 仅辅助摘要、引导和生成待核实线索，不自动处罚、自动上门或代替人工决定。
 - 网页端所有人、房屋、行动和指标均为 Mock 数据。
 
-详细说明见 [系统架构](docs/architecture.md)、[演示路径](docs/demo-flow.md) 和 [隐私边界](docs/privacy-boundary.md)。
+详细说明见 [项目说明文档](docs/项目说明文档.md)、[系统架构](docs/architecture.md)、[演示路径](docs/demo-flow.md) 和 [隐私边界](docs/privacy-boundary.md)。
 
 ## 依赖清单
 
